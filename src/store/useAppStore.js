@@ -157,7 +157,14 @@ const useAppStore = create(
     }),
     {
       name: 'scholar-coach-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => {
+        // During Expo static pre-render (Node.js), localStorage doesn't exist.
+        // Return a no-op storage so the store initializes with default state.
+        if (typeof window === 'undefined') {
+          return { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+        }
+        return AsyncStorage;
+      }),
       partialize: (state) => ({
         profile: state.profile,
         tracker: state.tracker,

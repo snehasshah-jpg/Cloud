@@ -1,3 +1,5 @@
+console.log('APP_START');
+console.time('APP_LOAD');
 import { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -42,6 +44,7 @@ export default function IndexScreen() {
     return () => clearTimeout(timer);
   }, [authChecked, user]);
 
+  console.log('APP_RENDER', { user: !!user, authChecked, profileLoaded: !!profile?.name });
   return (
     <LinearGradient colors={['#1e3a5f', '#2e5d99']} style={{ flex: 1 }}>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
