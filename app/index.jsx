@@ -1,5 +1,3 @@
-console.log('APP_START');
-console.time('APP_LOAD');
 import { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,23 +7,26 @@ import { auth } from '../src/config/firebase';
 import useAppStore from '../src/store/useAppStore';
 
 export default function IndexScreen() {
+  console.log('APP_START');
   const router = useRouter();
   const profile = useAppStore((s) => s.profile);
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState(null);
 
   // Effect 1: subscribe to Firebase auth state
+  // 3-second timeout ensures we never hang if Firebase is slow or blocked
   useEffect(() => {
     if (!auth) {
-      // During static pre-render or if Firebase failed to init
       setAuthChecked(true);
       return;
     }
+    const timeout = setTimeout(() => { setAuthChecked(true); }, 3000);
     const unsubscribe = onAuthStateChanged(auth, (u) => {
+      clearTimeout(timeout);
       setUser(u);
       setAuthChecked(true);
     });
-    return unsubscribe;
+    return () => { clearTimeout(timeout); unsubscribe(); };
   }, []);
 
   // Effect 2: redirect once auth state is known

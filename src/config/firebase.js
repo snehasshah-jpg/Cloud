@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeAuth, browserLocalPersistence } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDU61P8-pWAsIi_VfJ8BV3YFrnndE9AG6s",
@@ -11,13 +11,16 @@ const firebaseConfig = {
   measurementId: "G-SS34834T8C"
 };
 
-// Only initialize in the browser — getAuth() accesses IndexedDB which
-// doesn't exist during Expo's static pre-rendering pass (Node.js env).
+// Only initialize in the browser.
+// Use initializeAuth with explicit browserLocalPersistence to avoid IndexedDB,
+// which hangs indefinitely on mobile Safari.
 let auth = null;
 if (typeof window !== 'undefined') {
   try {
     const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
+    auth = initializeAuth(app, {
+      persistence: [browserLocalPersistence],
+    });
   } catch (e) {
     console.error('Firebase init error:', e);
   }
