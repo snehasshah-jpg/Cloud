@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../src/config/firebase';
+import useAppStore from '../src/store/useAppStore';
 import '../global.css';
 
 function AuthGate({ children }) {
   const router = useRouter();
   const segments = useSegments();
-  const [user, setUser] = useState(undefined); // undefined = still loading
+  const setUser = useAppStore((s) => s.setUser);
+  const user = useAppStore((s) => s.user);
+  const authLoading = useAppStore((s) => s.authLoading);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
@@ -17,14 +20,14 @@ function AuthGate({ children }) {
   }, []);
 
   useEffect(() => {
-    if (user === undefined) return; // still loading
+    if (authLoading) return; // still waiting for Firebase
     const inAuthGroup = segments[0] === 'auth';
     if (!user && !inAuthGroup) {
       router.replace('/auth/login');
     } else if (user && inAuthGroup) {
       router.replace('/');
     }
-  }, [user, segments]);
+  }, [user, authLoading, segments]);
 
   return children;
 }
