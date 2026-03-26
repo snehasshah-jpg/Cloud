@@ -15,8 +15,12 @@ const firebaseConfig = {
 // doesn't exist during Expo's static pre-rendering pass (Node.js env).
 let auth = null;
 if (typeof window !== 'undefined') {
-  const app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
+  try {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+  } catch (e) {
+    console.error('Firebase init error:', e);
+  }
 }
 
 export { auth };
