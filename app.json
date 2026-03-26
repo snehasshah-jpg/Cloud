@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "ScholarCoach",
+    "slug": "scholar-coach",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1e3a5f"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.scholarcoach.app",
+      "buildNumber": "1"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1e3a5f"
+      },
+      "package": "com.scholarcoach.app",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1e3a5f",
+          "image": "./assets/splash.png",
+          "imageWidth": 200
+        }
+      ]
+    ],
+    "scheme": "scholarcoach",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
