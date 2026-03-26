@@ -11,5 +11,12 @@ const firebaseConfig = {
   measurementId: "G-SS34834T8C"
 };
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// Only initialize in the browser — getAuth() accesses IndexedDB which
+// doesn't exist during Expo's static pre-rendering pass (Node.js env).
+let auth = null;
+if (typeof window !== 'undefined') {
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+}
+
+export { auth };

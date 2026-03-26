@@ -7,15 +7,10 @@ import useAppStore from '../src/store/useAppStore';
 export default function IndexScreen() {
   const router = useRouter();
   const profile = useAppStore((s) => s.profile);
-  const authLoading = useAppStore((s) => s.authLoading);
-  const user = useAppStore((s) => s.user);
 
   useEffect(() => {
-    // Wait for Firebase auth to resolve before redirecting
-    if (authLoading) return;
-    // If not logged in, AuthGate in _layout will handle the redirect to /auth/login
-    if (!user) return;
-
+    // AuthGate in _layout.jsx handles the redirect to /auth/login if not signed in.
+    // This timer only runs after AuthGate has confirmed the user is logged in.
     const timer = setTimeout(() => {
       if (profile.onboardingComplete) {
         router.replace('/(tabs)/dashboard');
@@ -23,9 +18,8 @@ export default function IndexScreen() {
         router.replace('/onboarding/welcome');
       }
     }, 1200);
-
     return () => clearTimeout(timer);
-  }, [authLoading, user]);
+  }, []);
 
   return (
     <LinearGradient colors={['#1e3a5f', '#2e5d99']} style={{ flex: 1 }}>
