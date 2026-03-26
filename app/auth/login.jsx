@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   signInWithEmailAndPassword,
@@ -10,6 +11,7 @@ import {
 import { auth } from '../../src/config/firebase';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,6 +31,7 @@ export default function LoginScreen() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
+      router.replace('/');
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {
@@ -43,6 +46,7 @@ export default function LoginScreen() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
+      router.replace('/');
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {
