@@ -64,6 +64,11 @@ const useAppStore = create(
       quizAnswers: {},   // { [questionId]: answerValue }
       matchedColleges: [],
       matchedScholarships: [],
+      user: null,        // Firebase user object (not persisted)
+      authLoading: true, // true until first Firebase auth check resolves
+
+      // Auth actions
+      setUser: (user) => set({ user, authLoading: false }),
 
       // Profile actions
       updateProfile: (updates) =>
