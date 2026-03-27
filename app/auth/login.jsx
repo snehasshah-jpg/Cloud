@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,16 +7,32 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '../../src/config/firebase';
+import useAppStore from '../../src/store/useAppStore';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+  const profile = useAppStore((s) => s.profile);
+  const [mode, setMode] = useState('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // If already signed in, redirect immediately to the app
+  useEffect(() => {
+    if (!auth) return;
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) {
+        router.replace(profile.onboardingComplete ? '/(tabs)/dashboard' : '/onboarding/welcome');
+      }
+    });
+    return unsub;
+  }, []);
+
+  const destination = profile.onboardingComplete ? '/(tabs)/dashboard' : '/onboarding/welcome';
 
   async function handleEmailAuth() {
     if (!email || !password) {
@@ -31,7 +47,7 @@ export default function LoginScreen() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      router.replace('/');
+      router.replace(destination);
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {
@@ -46,7 +62,7 @@ export default function LoginScreen() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.replace('/');
+      router.replace(destination);
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {
