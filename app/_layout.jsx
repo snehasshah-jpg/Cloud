@@ -5,11 +5,15 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import '../global.css';
 
-SplashScreen.preventAutoHideAsync();
+// Only set up splash screen management in native environments.
+// On web, this module is a no-op to prevent overlay from blocking touches.
+if (typeof window === 'undefined') {
+  SplashScreen.preventAutoHideAsync();
+}
 
 export default function RootLayout() {
   useEffect(() => {
-    SplashScreen.hideAsync();
+    SplashScreen.hideAsync().catch(() => {});
   }, []);
 
   return (
