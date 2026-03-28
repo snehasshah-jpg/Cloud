@@ -23,20 +23,25 @@ export default function IndexScreen() {
 
   const destination = profile?.onboardingComplete ? '/(tabs)/dashboard' : '/onboarding/welcome';
 
-  // Redirect if already signed in
+  // Redirect if already signed in.
+  // Timeout ensures the login form always appears within 4s even if Firebase hangs.
   useEffect(() => {
+    const timeout = setTimeout(() => setChecking(false), 4000);
+
     if (!auth) {
+      clearTimeout(timeout);
       setChecking(false);
       return;
     }
     const unsub = onAuthStateChanged(auth, (u) => {
+      clearTimeout(timeout);
       if (u) {
         router.replace(destination);
       } else {
         setChecking(false);
       }
     });
-    return unsub;
+    return () => { clearTimeout(timeout); unsub(); };
   }, []);
 
   async function handleEmailAuth() {
