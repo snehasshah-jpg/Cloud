@@ -1,15 +1,8 @@
 """
-Core autonomous travel agent.
+Core autonomous travel agent — ReAct loop.
 
-Implements the ReAct loop (Reason → Act → Observe → Repeat) using
-Claude's tool use API. Every response goes through:
-  1. Plan   — Claude decides which tools to call
-  2. Act    — tools execute and return results
-  3. Observe— results added to the conversation
-  4. Repeat — until Claude is ready to answer (stop_reason == "end_turn")
-
-The reflect_on_options tool forces an explicit self-critique step
-before any recommendation is presented to the user.
+Reason → Act → Observe → Repeat until Claude returns end_turn.
+Each TravelAgent instance is bound to one user profile.
 """
 
 import json
@@ -41,22 +34,23 @@ class AgentResponse:
 
 
 class TravelAgent:
-    def __init__(self):
-        self.memory = TravelMemory()
+    def __init__(self, profile_id: str | None = None):
+        self.memory = (
+            TravelMemory.load_profile(profile_id)
+            if profile_id
+            else TravelMemory()
+        )
+        if not self.memory:
+            self.memory = TravelMemory.create_profile()
         tool_module.set_memory(self.memory)
         self.client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     def chat(self, user_message: str, conversation_history: list[dict]) -> AgentResponse:
-        """
-        Run one turn of the travel agent.
+        """Run one turn of the travel agent (up to MAX_ITERATIONS tool loops)."""
+        # Reload memory in case it was updated outside this instance
+        self.memory.profile = self.memory._load()
+        tool_module.set_memory(self.memory)
 
-        Args:
-            user_message: The user's latest message.
-            conversation_history: All prior turns as Claude message dicts.
-
-        Returns:
-            AgentResponse with the agent's text reply and structured data.
-        """
         messages = conversation_history + [{"role": "user", "content": user_message}]
         system_prompt = self.memory.get_system_prompt()
 
@@ -77,11 +71,9 @@ class TravelAgent:
                 messages=messages,
             )
 
-            # No more tool calls — agent is done
             if response.stop_reason == "end_turn":
-                text = self._extract_text(response.content)
                 return AgentResponse(
-                    text=text,
+                    text=self._extract_text(response.content),
                     tool_calls_log=tool_calls_log,
                     reflection=reflection,
                     itinerary=itinerary,
@@ -89,23 +81,23 @@ class TravelAgent:
                     iterations=iterations,
                 )
 
-            # Process tool calls
             tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
             if not tool_use_blocks:
-                text = self._extract_text(response.content)
-                return AgentResponse(text=text, tool_calls_log=tool_calls_log,
-                                     reflection=reflection, itinerary=itinerary,
-                                     booking_links=booking_links, iterations=iterations)
+                return AgentResponse(
+                    text=self._extract_text(response.content),
+                    tool_calls_log=tool_calls_log,
+                    reflection=reflection,
+                    itinerary=itinerary,
+                    booking_links=booking_links,
+                    iterations=iterations,
+                )
 
-            # Append assistant turn (with tool_use blocks)
             messages.append({"role": "assistant", "content": response.content})
 
-            # Execute each tool and collect results
             tool_results = []
             for block in tool_use_blocks:
                 result = execute_tool(block.name, block.input)
 
-                # Capture structured data from specific tools
                 if block.name == "reflect_on_options":
                     reflection = result
                 elif block.name == "build_itinerary" and "id" in result:
@@ -113,24 +105,22 @@ class TravelAgent:
                 elif block.name == "generate_booking_links" and "booking_links" in result:
                     booking_links = result["booking_links"]
 
-                log_entry = {
-                    "tool": block.name,
-                    "input": block.input,
+                tool_calls_log.append({
+                    "tool":   block.name,
+                    "input":  block.input,
                     "output": result,
-                }
-                tool_calls_log.append(log_entry)
-
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": json.dumps(result),
                 })
 
-            # Append tool results as next user turn
+                tool_results.append({
+                    "type":        "tool_result",
+                    "tool_use_id": block.id,
+                    "content":     json.dumps(result),
+                })
+
             messages.append({"role": "user", "content": tool_results})
 
         return AgentResponse(
-            text="I ran into a processing limit. Please try a more specific request.",
+            text="I reached my processing limit. Please try a more specific request.",
             tool_calls_log=tool_calls_log,
             reflection=reflection,
             itinerary=itinerary,
@@ -140,6 +130,4 @@ class TravelAgent:
 
     @staticmethod
     def _extract_text(content: list) -> str:
-        return " ".join(
-            block.text for block in content if hasattr(block, "text")
-        ).strip()
+        return " ".join(b.text for b in content if hasattr(b, "text")).strip()

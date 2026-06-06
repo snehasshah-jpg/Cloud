@@ -1,376 +1,360 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>AI Travel Agent</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
-      height: 100vh;
-      display: flex;
-      overflow: hidden;
-    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;overflow:hidden}
 
     /* ── Sidebar ── */
-    #sidebar {
-      width: 280px;
-      min-width: 280px;
-      background: #1a1d27;
-      border-right: 1px solid #2d3148;
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-      gap: 16px;
-      overflow-y: auto;
-    }
+    #sidebar{width:290px;min-width:290px;background:#1a1d27;border-right:1px solid #2d3148;display:flex;flex-direction:column;overflow-y:auto}
+    #sidebar-header{padding:18px 20px 14px;border-bottom:1px solid #2d3148;display:flex;align-items:center;justify-content:space-between}
+    #sidebar-header h2{font-size:16px;font-weight:700;color:#a78bfa;display:flex;align-items:center;gap:7px}
+    #share-btn{background:#1e1b4b;border:1px solid #4338ca;color:#a5b4fc;font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;transition:background .2s}
+    #share-btn:hover{background:#2d2a6b}
 
-    #sidebar h2 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #a78bfa;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .sb-section{padding:14px 20px;border-bottom:1px solid #1e2235}
+    .sb-section h3{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#4b5563;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between}
+    .sb-section h3 button{font-size:10px;background:transparent;border:none;color:#6366f1;cursor:pointer;text-transform:none;letter-spacing:0}
 
-    .profile-section h3 {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #64748b;
-      margin-bottom: 8px;
-    }
+    .loyalty-card{background:#252836;border-radius:7px;padding:8px 11px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+    .loyalty-card .prog{color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+    .loyalty-card .bal{color:#a78bfa;font-weight:600;white-space:nowrap}
 
-    .loyalty-card {
-      background: #252836;
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-    }
+    .pref-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#64748b}
+    .pref-row span:last-child{color:#cbd5e1}
 
-    .loyalty-card .program { color: #94a3b8; }
-    .loyalty-card .balance { color: #a78bfa; font-weight: 600; }
+    .watch-item{background:#0d1f10;border:1px solid #14532d;border-radius:7px;padding:9px 11px;margin-bottom:6px;font-size:12px}
+    .watch-item .wi-desc{color:#86efac;font-weight:600;margin-bottom:3px}
+    .watch-item .wi-trigger{color:#6ee7b7;font-size:11px}
+    .watch-item .wi-status{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;background:#064e3b;color:#6ee7b7;margin-top:4px}
 
-    .pref-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      padding: 4px 0;
-      color: #94a3b8;
-    }
-    .pref-row span:last-child { color: #e2e8f0; }
+    .add-btn{width:100%;margin-top:8px;padding:7px;background:#1e1b4b;border:1px dashed #4338ca;color:#a5b4fc;border-radius:7px;cursor:pointer;font-size:12px;transition:background .2s}
+    .add-btn:hover{background:#2d2a6b}
 
-    /* ── Main area ── */
-    #main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    #edit-profile-btn{width:100%;padding:9px;background:#252836;border:1px solid #2d3148;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:12px;margin-top:2px}
+    #edit-profile-btn:hover{background:#2d3148}
 
-    #header {
-      padding: 16px 24px;
-      border-bottom: 1px solid #2d3148;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #1a1d27;
-    }
+    /* ── Main ── */
+    #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    #header{padding:14px 24px;border-bottom:1px solid #2d3148;background:#1a1d27;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    #header h1{font-size:18px;font-weight:700}
+    #header .sub{font-size:11px;color:#4b5563;margin-top:2px}
+    #status-badge{font-size:11px;padding:4px 10px;border-radius:20px;background:#1e293b;color:#64748b;transition:all .3s}
+    #status-badge.thinking{background:#312e81;color:#a78bfa}
+    #status-badge.done{background:#14532d;color:#86efac}
 
-    #header h1 { font-size: 20px; font-weight: 700; }
-    #header .subtitle { font-size: 12px; color: #64748b; }
+    #messages{flex:1;overflow-y:auto;padding:18px 24px;display:flex;flex-direction:column;gap:14px}
 
-    #status-badge {
-      font-size: 11px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: #1e293b;
-      color: #64748b;
-    }
-    #status-badge.thinking { background: #312e81; color: #a78bfa; }
-    #status-badge.done     { background: #14532d; color: #86efac; }
+    .msg{display:flex;gap:11px;max-width:840px}
+    .msg.user{align-self:flex-end;flex-direction:row-reverse}
+    .msg.agent{align-self:flex-start}
+    .avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+    .msg.user .avatar{background:#312e81}
+    .msg.agent .avatar{background:#1e3a5f}
+    .bubble{padding:11px 15px;border-radius:11px;font-size:13.5px;line-height:1.65;max-width:700px;white-space:pre-wrap}
+    .msg.user .bubble{background:#312e81;color:#e0e7ff;border-radius:11px 11px 4px 11px}
+    .msg.agent .bubble{background:#1e293b;color:#e2e8f0;border-radius:11px 11px 11px 4px}
 
-    /* ── Messages ── */
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+    /* Reasoning */
+    .reasoning-panel{background:#0f172a;border:1px solid #1e3a5f;border-radius:8px;margin-top:7px;overflow:hidden;max-width:700px;margin-left:41px}
+    .rp-header{padding:7px 13px;background:#1e3a5f;font-size:11px;font-weight:600;color:#7dd3fc;cursor:pointer;display:flex;justify-content:space-between;user-select:none}
+    .rp-body{padding:11px 13px;display:none}
+    .rp-body.open{display:block}
+    .tool-step{margin-bottom:9px;font-size:11px}
+    .tool-step .tn{font-weight:600;color:#a78bfa;margin-bottom:2px}
+    .tool-step .td{background:#1e293b;border-radius:5px;padding:7px;font-family:'SF Mono',monospace;font-size:10.5px;color:#94a3b8;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto}
 
-    .msg {
-      display: flex;
-      gap: 12px;
-      max-width: 820px;
-    }
+    /* Reflection */
+    .reflection-card{background:#1a2744;border:1px solid #2563eb;border-radius:9px;padding:13px 15px;margin-top:7px;font-size:12.5px;max-width:700px;margin-left:41px}
+    .reflection-card h4{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#60a5fa;margin-bottom:9px}
+    .rc-section{margin-bottom:9px}
+    .rc-label{color:#93c5fd;font-weight:600;font-size:11.5px}
+    .rc-text{color:#cbd5e1;margin-top:3px;line-height:1.55}
 
-    .msg.user  { align-self: flex-end; flex-direction: row-reverse; }
-    .msg.agent { align-self: flex-start; }
+    /* Warnings */
+    .warning-banner{background:#451a03;border:1px solid #ea580c;border-radius:8px;padding:10px 13px;margin-top:7px;font-size:12px;color:#fdba74;max-width:700px;margin-left:41px}
 
-    .msg .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
+    /* Itinerary */
+    .itin-card{background:#0d2b1d;border:1px solid #16a34a;border-radius:9px;padding:15px;margin-top:9px;max-width:700px;margin-left:41px}
+    .itin-card h4{font-size:13px;font-weight:700;color:#86efac;margin-bottom:11px;display:flex;align-items:center;gap:5px}
+    .itin-row{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px solid #14532d;color:#d1fae5}
+    .itin-row:last-of-type{border:none}
+    .itin-row .label{color:#86efac;font-weight:500}
+    .cost-box{margin-top:11px;background:#052e16;border-radius:7px;padding:9px 11px;font-size:12.5px}
+    .cost-box .total{font-size:22px;font-weight:700;color:#4ade80}
+    .book-btn{margin-top:12px;width:100%;padding:11px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s}
+    .book-btn:hover{background:#15803d}
 
-    .msg.user  .avatar { background: #312e81; }
-    .msg.agent .avatar { background: #1e3a5f; }
+    /* Deal alert */
+    .deal-alert{background:#1e0a00;border:2px solid #dc2626;border-radius:9px;padding:14px;margin-top:9px;max-width:700px;margin-left:41px;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{border-color:#dc2626}50%{border-color:#f87171}}
+    .deal-alert h4{color:#f87171;font-size:13px;font-weight:700;margin-bottom:7px}
+    .deal-alert p{color:#fca5a5;font-size:12.5px;line-height:1.55}
 
-    .bubble {
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      line-height: 1.6;
-      max-width: 680px;
-      white-space: pre-wrap;
-    }
+    /* Input */
+    #input-area{padding:14px 24px;background:#1a1d27;border-top:1px solid #2d3148;display:flex;gap:9px;align-items:flex-end;flex-shrink:0}
+    #user-input{flex:1;background:#252836;border:1px solid #2d3148;border-radius:9px;color:#e2e8f0;font-size:13.5px;padding:10px 13px;resize:none;min-height:42px;max-height:110px;outline:none;font-family:inherit;line-height:1.5}
+    #user-input:focus{border-color:#a78bfa}
+    #user-input::placeholder{color:#374151}
+    #send-btn{background:#7c3aed;border:none;color:#fff;width:42px;height:42px;border-radius:9px;font-size:17px;cursor:pointer;transition:background .2s;flex-shrink:0}
+    #send-btn:hover{background:#6d28d9}
+    #send-btn:disabled{background:#374151;cursor:not-allowed}
 
-    .msg.user  .bubble { background: #312e81; color: #e0e7ff; border-radius: 12px 12px 4px 12px; }
-    .msg.agent .bubble { background: #1e293b; color: #e2e8f0; border-radius: 12px 12px 12px 4px; }
+    /* Thinking */
+    .thinking-msg .bubble{display:flex;gap:4px;align-items:center;padding:13px 17px}
+    .dot{width:7px;height:7px;border-radius:50%;background:#4b5563;animation:bounce 1.2s infinite}
+    .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+    @keyframes bounce{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
 
-    /* ── Reasoning panel ── */
-    .reasoning-panel {
-      background: #0f172a;
-      border: 1px solid #1e3a5f;
-      border-radius: 8px;
-      margin-top: 8px;
-      overflow: hidden;
-      max-width: 680px;
-    }
+    /* ── Onboarding Modal ── */
+    #onboarding-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+    #onboarding-overlay.hidden{display:none}
+    #onboarding-modal{background:#1a1d27;border:1px solid #2d3148;border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+    .ob-header{padding:22px 26px 18px;border-bottom:1px solid #2d3148}
+    .ob-header h2{font-size:20px;font-weight:700;color:#a78bfa}
+    .ob-header p{font-size:13px;color:#64748b;margin-top:5px}
+    .ob-step{padding:22px 26px;display:none}
+    .ob-step.active{display:block}
+    .ob-step h3{font-size:15px;font-weight:600;color:#e2e8f0;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .step-indicator{display:flex;gap:6px;padding:12px 26px;border-bottom:1px solid #2d3148}
+    .step-dot{width:8px;height:8px;border-radius:50%;background:#1e293b;transition:background .3s}
+    .step-dot.active{background:#7c3aed}
+    .step-dot.done{background:#16a34a}
 
-    .reasoning-header {
-      padding: 8px 14px;
-      background: #1e3a5f;
-      font-size: 12px;
-      font-weight: 600;
-      color: #7dd3fc;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      user-select: none;
-    }
+    .field-group{margin-bottom:14px}
+    .field-group label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px}
+    .field-group input,.field-group select,.field-group textarea{width:100%;background:#252836;border:1px solid #2d3148;border-radius:7px;color:#e2e8f0;font-size:13px;padding:9px 12px;outline:none;font-family:inherit}
+    .field-group input:focus,.field-group select,.field-group textarea:focus{border-color:#7c3aed}
+    .field-group select{cursor:pointer}
+    .field-group textarea{resize:vertical;min-height:70px}
 
-    .reasoning-body {
-      padding: 12px 14px;
-      display: none;
-    }
-    .reasoning-body.open { display: block; }
+    .loyalty-entry{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+    .loyalty-entry select{flex:2;background:#252836;border:1px solid #2d3148;border-radius:7px;color:#e2e8f0;font-size:12px;padding:8px 10px;outline:none}
+    .loyalty-entry input{flex:1;background:#252836;border:1px solid #2d3148;border-radius:7px;color:#e2e8f0;font-size:12px;padding:8px 10px;outline:none}
+    .loyalty-entry input::placeholder{color:#374151}
+    .remove-btn{background:transparent;border:none;color:#4b5563;cursor:pointer;font-size:16px;padding:0 4px;flex-shrink:0}
+    .remove-btn:hover{color:#ef4444}
 
-    .tool-step {
-      margin-bottom: 10px;
-      font-size: 12px;
-    }
+    .trip-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
+    .tt-chip{padding:8px 6px;text-align:center;background:#252836;border:1px solid #2d3148;border-radius:8px;cursor:pointer;font-size:12px;color:#94a3b8;transition:all .2s;user-select:none}
+    .tt-chip:hover{border-color:#7c3aed;color:#a78bfa}
+    .tt-chip.selected{background:#312e81;border-color:#7c3aed;color:#e0e7ff}
 
-    .tool-step .tool-name {
-      font-weight: 600;
-      color: #a78bfa;
-      margin-bottom: 3px;
-    }
+    .traveler-entry{background:#252836;border-radius:8px;padding:12px;margin-bottom:9px}
+    .traveler-entry .te-name{font-size:12px;font-weight:600;color:#a78bfa;margin-bottom:8px}
 
-    .tool-step .tool-data {
-      background: #1e293b;
-      border-radius: 6px;
-      padding: 8px;
-      font-family: "SF Mono", monospace;
-      font-size: 11px;
-      color: #94a3b8;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+    .ob-footer{padding:16px 26px;border-top:1px solid #2d3148;display:flex;justify-content:space-between;align-items:center}
+    .ob-footer button{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:background .2s}
+    .btn-next{background:#7c3aed;color:#fff}
+    .btn-next:hover{background:#6d28d9}
+    .btn-back{background:#252836;color:#94a3b8;border:1px solid #2d3148}
+    .btn-back:hover{background:#2d3148}
+    .btn-skip{background:transparent;color:#4b5563;border:none;font-size:12px;cursor:pointer}
+    .btn-skip:hover{color:#94a3b8}
 
-    /* ── Reflection card ── */
-    .reflection-card {
-      background: #1a2744;
-      border: 1px solid #2563eb;
-      border-radius: 10px;
-      padding: 14px 16px;
-      margin-top: 8px;
-      font-size: 13px;
-      max-width: 680px;
-    }
+    /* ── Share modal ── */
+    #share-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px}
+    #share-modal.hidden{display:none}
+    .share-box{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:26px;max-width:480px;width:100%}
+    .share-box h3{font-size:16px;color:#a78bfa;margin-bottom:6px}
+    .share-box p{font-size:13px;color:#64748b;margin-bottom:16px}
+    .share-url{background:#252836;border:1px solid #2d3148;border-radius:7px;padding:10px 13px;font-size:12px;color:#94a3b8;word-break:break-all;margin-bottom:12px;font-family:monospace}
+    .copy-btn{width:100%;padding:10px;background:#7c3aed;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:8px}
+    .copy-btn:hover{background:#6d28d9}
+    .close-share{width:100%;padding:9px;background:#252836;border:1px solid #2d3148;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:13px}
 
-    .reflection-card h4 {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #60a5fa;
-      margin-bottom: 8px;
-    }
-
-    .reflection-card .section { margin-bottom: 10px; }
-    .reflection-card .section-label { color: #93c5fd; font-weight: 600; font-size: 12px; }
-    .reflection-card .section-text  { color: #cbd5e1; margin-top: 3px; line-height: 1.5; }
-
-    /* ── Itinerary card ── */
-    .itinerary-card {
-      background: #0d2b1d;
-      border: 1px solid #16a34a;
-      border-radius: 10px;
-      padding: 16px;
-      margin-top: 10px;
-      max-width: 680px;
-    }
-
-    .itinerary-card h4 {
-      font-size: 14px;
-      font-weight: 700;
-      color: #86efac;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .itin-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      padding: 5px 0;
-      border-bottom: 1px solid #14532d;
-      color: #d1fae5;
-    }
-    .itin-row:last-of-type { border-bottom: none; }
-    .itin-row .label { color: #86efac; font-weight: 500; }
-
-    .cost-summary {
-      margin-top: 12px;
-      background: #052e16;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 13px;
-    }
-    .cost-summary .total { font-size: 18px; font-weight: 700; color: #4ade80; }
-
-    .book-btn {
-      margin-top: 14px;
-      width: 100%;
-      padding: 12px;
-      background: #16a34a;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .book-btn:hover { background: #15803d; }
-
-    /* ── Input area ── */
-    #input-area {
-      padding: 16px 24px;
-      background: #1a1d27;
-      border-top: 1px solid #2d3148;
-      display: flex;
-      gap: 10px;
-      align-items: flex-end;
-    }
-
-    #user-input {
-      flex: 1;
-      background: #252836;
-      border: 1px solid #2d3148;
-      border-radius: 10px;
-      color: #e2e8f0;
-      font-size: 14px;
-      padding: 10px 14px;
-      resize: none;
-      min-height: 44px;
-      max-height: 120px;
-      outline: none;
-      font-family: inherit;
-      line-height: 1.5;
-    }
-    #user-input:focus { border-color: #a78bfa; }
-    #user-input::placeholder { color: #4b5563; }
-
-    #send-btn {
-      background: #7c3aed;
-      border: none;
-      color: #fff;
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      font-size: 18px;
-      cursor: pointer;
-      transition: background 0.2s;
-      flex-shrink: 0;
-    }
-    #send-btn:hover { background: #6d28d9; }
-    #send-btn:disabled { background: #374151; cursor: not-allowed; }
-
-    /* ── Thinking dots ── */
-    .thinking-msg .bubble {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      padding: 14px 18px;
-    }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; animation: bounce 1.2s infinite; }
-    .dot:nth-child(2) { animation-delay: 0.2s; }
-    .dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce { 0%,80%,100%{transform:scale(0.8);opacity:0.5} 40%{transform:scale(1.2);opacity:1} }
-
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:#374151;border-radius:3px}
   </style>
 </head>
 <body>
 
+<!-- ── Onboarding Modal ── -->
+<div id="onboarding-overlay">
+  <div id="onboarding-modal">
+    <div class="ob-header">
+      <h2>✈️ Welcome to Your AI Travel Agent</h2>
+      <p>Let me learn about you so I can find the best deals. Takes 2 minutes.</p>
+    </div>
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot-0"></div>
+      <div class="step-dot" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <div class="step-dot" id="dot-3"></div>
+      <div class="step-dot" id="dot-4"></div>
+    </div>
+
+    <!-- Step 0: Who are you -->
+    <div class="ob-step active" id="step-0">
+      <h3>👤 About You</h3>
+      <div class="field-group"><label>Your name</label><input id="ob-name" placeholder="First name"/></div>
+      <div class="field-group"><label>Email address <span style="color:#4b5563">(for deal alerts)</span></label><input id="ob-email" type="email" placeholder="you@example.com"/></div>
+    </div>
+
+    <!-- Step 1: Loyalty Programs -->
+    <div class="ob-step" id="step-1">
+      <h3>💳 Your Loyalty Programs & Balances</h3>
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px">Add every program where you have points or miles. We'll find the best redemptions.</p>
+      <div id="loyalty-entries"></div>
+      <button class="add-btn" onclick="addLoyaltyRow()">+ Add program</button>
+    </div>
+
+    <!-- Step 2: Travel Preferences -->
+    <div class="ob-step" id="step-2">
+      <h3>🎯 Travel Preferences</h3>
+      <div class="field-group">
+        <label>Preferred cabin class</label>
+        <select id="ob-cabin">
+          <option value="economy">Economy</option>
+          <option value="premium_economy">Premium Economy</option>
+          <option value="business">Business</option>
+          <option value="first">First Class</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Preferred seat</label>
+        <select id="ob-seat">
+          <option value="window">Window</option>
+          <option value="aisle">Aisle</option>
+          <option value="bulkhead">Bulkhead / Extra legroom</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Typical hotel budget per night (USD)</label>
+        <input id="ob-budget" type="number" placeholder="e.g. 400"/>
+      </div>
+      <div class="field-group">
+        <label>Dietary restrictions or accessibility needs</label>
+        <input id="ob-dietary" placeholder="e.g. vegan, gluten-free, wheelchair accessible"/>
+      </div>
+      <div class="field-group" style="display:flex;align-items:center;gap:10px">
+        <input type="checkbox" id="ob-pet" style="width:auto;margin:0"/>
+        <label for="ob-pet" style="margin:0;cursor:pointer">I travel with pets</label>
+      </div>
+    </div>
+
+    <!-- Step 3: Trip Types -->
+    <div class="ob-step" id="step-3">
+      <h3>🌴 What kinds of trips do you love?</h3>
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px">Select all that apply. The agent will factor these into every recommendation.</p>
+      <div class="trip-type-grid" id="trip-type-grid">
+        <div class="tt-chip" data-type="beach">🏖️ Beach</div>
+        <div class="tt-chip" data-type="adventure">🧗 Adventure</div>
+        <div class="tt-chip" data-type="city">🏙️ City</div>
+        <div class="tt-chip" data-type="wellness">🧘 Wellness</div>
+        <div class="tt-chip" data-type="ski">⛷️ Ski</div>
+        <div class="tt-chip" data-type="cruise">🚢 Cruise</div>
+        <div class="tt-chip" data-type="cultural">🏛️ Cultural</div>
+        <div class="tt-chip" data-type="safari">🦁 Safari</div>
+        <div class="tt-chip" data-type="food">🍽️ Food & Wine</div>
+        <div class="tt-chip" data-type="business">💼 Business</div>
+        <div class="tt-chip" data-type="family">👨‍👩‍👧 Family</div>
+        <div class="tt-chip" data-type="honeymoon">💍 Honeymoon</div>
+      </div>
+      <div class="field-group" style="margin-top:14px">
+        <label>Anything else the agent should know?</label>
+        <textarea id="ob-objectives" placeholder="e.g. I want to use my Chase points before they expire, I always fly with my partner, I prefer boutique hotels over chains, I need late check-out for work calls..."></textarea>
+      </div>
+    </div>
+
+    <!-- Step 4: Travelers -->
+    <div class="ob-step" id="step-4">
+      <h3>👥 Who's Traveling?</h3>
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px">Add yourself plus any travel companions. This helps with seat selection and pricing.</p>
+      <div id="traveler-entries">
+        <div class="traveler-entry">
+          <div class="te-name">Traveler 1 (You)</div>
+          <div class="field-group" style="margin-bottom:0">
+            <label>Passport country</label>
+            <select id="t1-passport">
+              <option value="US">United States</option>
+              <option value="CA">Canada</option>
+              <option value="GB">United Kingdom</option>
+              <option value="AU">Australia</option>
+              <option value="DE">Germany</option>
+              <option value="FR">France</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button class="add-btn" onclick="addTravelerRow()">+ Add travel companion</button>
+    </div>
+
+    <div class="ob-footer">
+      <div>
+        <button class="btn-back" id="ob-back-btn" onclick="obPrev()" style="display:none">← Back</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn-skip" onclick="skipOnboarding()">Skip for now</button>
+        <button class="btn-next" id="ob-next-btn" onclick="obNext()">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Share Modal ── -->
+<div id="share-modal" class="hidden">
+  <div class="share-box">
+    <h3>Share This Agent</h3>
+    <p>Anyone with this link can use the AI Travel Agent. They'll start with a fresh profile of their own.</p>
+    <div class="share-url" id="share-url-text"></div>
+    <button class="copy-btn" onclick="copyShareUrl()">Copy Link</button>
+    <button class="close-share" onclick="closeShareModal()">Close</button>
+  </div>
+</div>
+
 <!-- ── Sidebar ── -->
 <aside id="sidebar">
-  <h2>✈️ Travel Agent</h2>
-
-  <div class="profile-section">
-    <h3>Loyalty Programs</h3>
-    <div id="loyalty-list">
-      <div style="font-size:12px;color:#4b5563">No programs saved yet.<br>Tell the agent about your miles!</div>
-    </div>
+  <div id="sidebar-header">
+    <h2>✈️ My Profile</h2>
+    <button id="share-btn" onclick="openShareModal()">🔗 Share</button>
   </div>
 
-  <div class="profile-section">
+  <div class="sb-section">
+    <h3>Loyalty Programs <button onclick="goToLoyaltyStep()">Edit</button></h3>
+    <div id="loyalty-list"><div style="font-size:12px;color:#374151">No programs yet.</div></div>
+  </div>
+
+  <div class="sb-section">
     <h3>Preferences</h3>
     <div id="prefs-list">
-      <div class="pref-row"><span>Cabin</span><span id="pref-cabin">—</span></div>
-      <div class="pref-row"><span>Seat</span><span id="pref-seat">—</span></div>
-      <div class="pref-row"><span>Budget/night</span><span id="pref-budget">—</span></div>
-      <div class="pref-row"><span>Pet friendly</span><span id="pref-pet">—</span></div>
+      <div class="pref-row"><span>Cabin</span><span id="pf-cabin">—</span></div>
+      <div class="pref-row"><span>Seat</span><span id="pf-seat">—</span></div>
+      <div class="pref-row"><span>Budget/night</span><span id="pf-budget">—</span></div>
+      <div class="pf-row" style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#64748b"><span>Trip types</span><span id="pf-types" style="color:#cbd5e1;text-align:right;max-width:160px;font-size:11px">—</span></div>
     </div>
   </div>
 
-  <div class="profile-section">
-    <h3>Quick Start</h3>
-    <div style="font-size:12px;color:#64748b;line-height:1.6">
-      Try: <em>"I want to fly from SFO to Paris for a week in August. I have 125,000 United miles and 175,000 Marriott points."</em>
+  <div class="sb-section">
+    <h3>Deal Watches</h3>
+    <div id="watches-list"><div style="font-size:12px;color:#374151">No active watches.</div></div>
+  </div>
+
+  <div class="sb-section">
+    <button id="edit-profile-btn" onclick="reopenOnboarding()">✏️ Edit My Profile</button>
+  </div>
+
+  <div class="sb-section">
+    <h3>Quick Starts</h3>
+    <div style="font-size:11.5px;color:#374151;line-height:1.7">
+      <div style="cursor:pointer;color:#6366f1;padding:3px 0" onclick="quickSend('Plan a beach trip for 2 people from New York to Cancun for 7 nights in November. I want minimal sargassum and great value.')">🏖️ EWR → Cancun, 7 nights Nov</div>
+      <div style="cursor:pointer;color:#6366f1;padding:3px 0" onclick="quickSend('Find the best flights and hotels from JFK to Paris for 5 nights in May. I prefer business class and have Chase Ultimate Rewards points.')">🗼 JFK → Paris, 5 nights May</div>
+      <div style="cursor:pointer;color:#6366f1;padding:3px 0" onclick="quickSend('Where should I travel in January that has warm weather, great deals, and clear water? I fly from Newark, budget is $3000 total.')">🌍 Best Jan destination from EWR</div>
     </div>
   </div>
 </aside>
 
-<!-- ── Main ── -->
+<!-- ── Main Chat ── -->
 <div id="main">
   <div id="header">
     <div>
-      <h1>Personal Travel Specialist</h1>
-      <div class="subtitle">Powered by Claude · Tool Use · ReAct · Memory · Reflection</div>
+      <h1>AI Travel Specialist</h1>
+      <div class="sub">Autonomous · Tool Use · ReAct · Multi-program optimization · Deal monitoring</div>
     </div>
     <div id="status-badge">Ready</div>
   </div>
@@ -378,9 +362,15 @@
   <div id="messages">
     <div class="msg agent">
       <div class="avatar">✈️</div>
-      <div class="bubble">Hello! I'm your personal travel specialist. I can search flights, compare hotels, evaluate your loyalty program redemptions, and build a complete itinerary — all you need to do is approve it and click "Book Now".
+      <div class="bubble">Hello! I'm your personal AI travel specialist. I can:
 
-Tell me where and when you'd like to travel, and mention your airline miles or hotel points so I can find the best value for you.</div>
+• Search flights and hotels for **any destination**
+• Optimize across all your loyalty programs (airlines, hotels, credit cards)
+• Suggest the best travel window (weather, crowds, sargassum, pricing)
+• Build a full itinerary and take you to the booking page
+• Set up deal alerts and email you when prices drop
+
+Where would you like to go? Tell me your destination, approximate dates, how many people, and any loyalty programs you have — I'll take it from there.</div>
     </div>
   </div>
 
@@ -391,260 +381,437 @@ Tell me where and when you'd like to travel, and mention your airline miles or h
 </div>
 
 <script>
-  const API = "http://localhost:8000";
-  let sessionId = null;
+const API = "http://localhost:8000";
+let profileId = localStorage.getItem("travelAgentProfileId");
+let currentStep = 0;
+const TOTAL_STEPS = 5;
 
-  const messagesEl = document.getElementById("messages");
-  const inputEl    = document.getElementById("user-input");
-  const sendBtn    = document.getElementById("send-btn");
-  const statusBadge = document.getElementById("status-badge");
+// ── Loyalty programs list (matches loyalty.py) ──────────────────────────────
+const ALL_PROGRAMS = [
+  "United MileagePlus","Delta SkyMiles","American AAdvantage","JetBlue TrueBlue",
+  "Southwest Rapid Rewards","Alaska Mileage Plan","Air Canada Aeroplan",
+  "British Airways Executive Club (Avios)","Air France/KLM Flying Blue",
+  "Emirates Skywards","Singapore KrisFlyer","Virgin Atlantic Flying Club",
+  "Marriott Bonvoy","Hilton Honors","World of Hyatt","IHG One Rewards","Wyndham Rewards",
+  "Chase Ultimate Rewards","Amex Membership Rewards","Capital One Miles",
+  "Citi ThankYou Points","Bilt Rewards"
+];
 
-  // Auto-resize textarea
-  inputEl.addEventListener("input", () => {
-    inputEl.style.height = "auto";
-    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+// ── Onboarding logic ─────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", async () => {
+  addLoyaltyRow(); // initial empty row
+  setupTripTypeChips();
+
+  if (profileId) {
+    // Returning user — skip onboarding
+    document.getElementById("onboarding-overlay").classList.add("hidden");
+    loadSidebar();
+  } else {
+    // New user — show onboarding
+    document.getElementById("onboarding-overlay").classList.remove("hidden");
+  }
+});
+
+function setupTripTypeChips() {
+  document.querySelectorAll(".tt-chip").forEach(chip => {
+    chip.addEventListener("click", () => chip.classList.toggle("selected"));
+  });
+}
+
+function addLoyaltyRow(prog = "", bal = "") {
+  const opts = ALL_PROGRAMS.map(p => `<option value="${p}" ${p===prog?"selected":""}>${p}</option>`).join("");
+  const el = document.createElement("div");
+  el.className = "loyalty-entry";
+  el.innerHTML = `<select>${opts}</select><input type="number" placeholder="Balance" value="${bal}"/>
+    <button class="remove-btn" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById("loyalty-entries").appendChild(el);
+}
+
+function addTravelerRow() {
+  const idx = document.getElementById("traveler-entries").children.length + 1;
+  const el = document.createElement("div");
+  el.className = "traveler-entry";
+  el.innerHTML = `<div class="te-name" style="display:flex;justify-content:space-between">
+    <span>Traveler ${idx}</span>
+    <button class="remove-btn" onclick="this.closest('.traveler-entry').remove()">✕</button></div>
+    <div class="field-group"><label>Name</label><input placeholder="Name"/></div>
+    <div class="field-group" style="margin-bottom:0"><label>Passport country</label>
+    <select><option value="US">United States</option><option value="CA">Canada</option>
+    <option value="GB">United Kingdom</option><option value="OTHER">Other</option></select></div>`;
+  document.getElementById("traveler-entries").appendChild(el);
+}
+
+function obUpdateDots() {
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const dot = document.getElementById(`dot-${i}`);
+    if (!dot) continue;
+    dot.className = "step-dot" + (i < currentStep ? " done" : i === currentStep ? " active" : "");
+  }
+  document.getElementById("ob-back-btn").style.display = currentStep > 0 ? "" : "none";
+  document.getElementById("ob-next-btn").textContent = currentStep === TOTAL_STEPS - 1 ? "Let's go! 🚀" : "Next →";
+}
+
+function obNext() {
+  if (currentStep < TOTAL_STEPS - 1) {
+    document.getElementById(`step-${currentStep}`).classList.remove("active");
+    currentStep++;
+    document.getElementById(`step-${currentStep}`).classList.add("active");
+    obUpdateDots();
+  } else {
+    finishOnboarding();
+  }
+}
+
+function obPrev() {
+  if (currentStep > 0) {
+    document.getElementById(`step-${currentStep}`).classList.remove("active");
+    currentStep--;
+    document.getElementById(`step-${currentStep}`).classList.add("active");
+    obUpdateDots();
+  }
+}
+
+async function finishOnboarding() {
+  const name   = document.getElementById("ob-name").value.trim();
+  const email  = document.getElementById("ob-email").value.trim();
+  const cabin  = document.getElementById("ob-cabin").value;
+  const seat   = document.getElementById("ob-seat").value;
+  const budget = parseFloat(document.getElementById("ob-budget").value) || null;
+  const dietaryRaw = document.getElementById("ob-dietary").value.trim();
+  const dietary = dietaryRaw ? dietaryRaw.split(",").map(s => s.trim()) : [];
+  const pet    = document.getElementById("ob-pet").checked;
+  const objectives = document.getElementById("ob-objectives").value.trim();
+
+  // Loyalty programs
+  const loyaltyPrograms = {};
+  document.querySelectorAll("#loyalty-entries .loyalty-entry").forEach(row => {
+    const prog = row.querySelector("select").value;
+    const bal  = parseFloat(row.querySelector("input").value);
+    if (prog && !isNaN(bal) && bal > 0) loyaltyPrograms[prog] = bal;
   });
 
-  // Send on Enter (Shift+Enter = newline)
-  inputEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  });
-  sendBtn.addEventListener("click", sendMessage);
+  // Trip types
+  const tripTypes = [...document.querySelectorAll(".tt-chip.selected")].map(c => c.dataset.type);
 
-  function scrollBottom() {
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
+  // Create profile
+  let res = await fetch(`${API}/profiles`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({name, email}),
+  }).then(r => r.json()).catch(() => null);
 
-  function setStatus(state, text) {
-    statusBadge.className = `status-badge ${state}`;
-    statusBadge.textContent = text;
-  }
+  if (res && res.profile_id) {
+    profileId = res.profile_id;
+    localStorage.setItem("travelAgentProfileId", profileId);
 
-  function addUserBubble(text) {
-    const div = document.createElement("div");
-    div.className = "msg user";
-    div.innerHTML = `<div class="avatar">👤</div><div class="bubble">${escHtml(text)}</div>`;
-    messagesEl.appendChild(div);
-    scrollBottom();
-  }
-
-  function addThinkingBubble() {
-    const div = document.createElement("div");
-    div.className = "msg agent thinking-msg";
-    div.id = "thinking";
-    div.innerHTML = `<div class="avatar">✈️</div><div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-    messagesEl.appendChild(div);
-    scrollBottom();
-    return div;
-  }
-
-  function removeThinking() {
-    const el = document.getElementById("thinking");
-    if (el) el.remove();
-  }
-
-  function addAgentResponse(data) {
-    removeThinking();
-    const wrapper = document.createElement("div");
-    wrapper.style.display = "flex";
-    wrapper.style.flexDirection = "column";
-    wrapper.style.gap = "6px";
-
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "msg agent";
-    msgDiv.innerHTML = `<div class="avatar">✈️</div><div class="bubble">${escHtml(data.text)}</div>`;
-    wrapper.appendChild(msgDiv);
-
-    // Reasoning panel (tool call log)
-    if (data.tool_calls_log && data.tool_calls_log.length > 0) {
-      const panel = buildReasoningPanel(data.tool_calls_log, data.iterations);
-      wrapper.appendChild(panel);
-    }
-
-    // Reflection card
-    if (data.reflection) {
-      wrapper.appendChild(buildReflectionCard(data.reflection));
-    }
-
-    // Itinerary card
-    if (data.itinerary) {
-      wrapper.appendChild(buildItineraryCard(data.itinerary, data.booking_links));
-    }
-
-    messagesEl.appendChild(wrapper);
-    scrollBottom();
-
-    // Update sidebar
-    loadProfile();
-  }
-
-  function buildReasoningPanel(log, iterations) {
-    const panel = document.createElement("div");
-    panel.className = "reasoning-panel";
-    panel.style.marginLeft = "44px";
-
-    const header = document.createElement("div");
-    header.className = "reasoning-header";
-    header.innerHTML = `<span>🔍 Agent Reasoning (${log.length} tool calls · ${iterations} iterations)</span><span>▼</span>`;
-    header.addEventListener("click", () => {
-      body.classList.toggle("open");
-      header.querySelector("span:last-child").textContent = body.classList.contains("open") ? "▲" : "▼";
+    // Save all details
+    await fetch(`${API}/profiles/${profileId}`, {
+      method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        loyalty_programs: loyaltyPrograms,
+        cabin_preference: cabin,
+        seat_preference: seat,
+        budget_per_night: budget,
+        dietary_restrictions: dietary,
+        pet_friendly_required: pet,
+        trip_types_liked: tripTypes,
+        objectives,
+      }),
     });
-
-    const body = document.createElement("div");
-    body.className = "reasoning-body";
-
-    log.forEach(entry => {
-      const step = document.createElement("div");
-      step.className = "tool-step";
-      step.innerHTML = `
-        <div class="tool-name">→ ${entry.tool}</div>
-        <div class="tool-data">${escHtml(JSON.stringify(entry.input, null, 2))}</div>
-      `;
-      body.appendChild(step);
-    });
-
-    panel.appendChild(header);
-    panel.appendChild(body);
-    return panel;
   }
 
-  function buildReflectionCard(r) {
-    const card = document.createElement("div");
-    card.className = "reflection-card";
-    card.style.marginLeft = "44px";
-    card.innerHTML = `
-      <h4>🧠 Agent Reflection (Self-Critique)</h4>
-      <div class="section">
-        <div class="section-label">Flights Analysis</div>
-        <div class="section-text">${escHtml(r.flight_analysis || "")}</div>
-      </div>
-      <div class="section">
-        <div class="section-label">Hotels Analysis</div>
-        <div class="section-text">${escHtml(r.hotel_analysis || "")}</div>
-      </div>
-      <div class="section">
-        <div class="section-label">Miles / Points Strategy</div>
-        <div class="section-text">${escHtml(r.miles_strategy || "")}</div>
-      </div>
-      <div class="section">
-        <div class="section-label">✅ Final Recommendation</div>
-        <div class="section-text">${escHtml(r.final_recommendation || "")}</div>
-      </div>
-    `;
-    return card;
+  document.getElementById("onboarding-overlay").classList.add("hidden");
+  loadSidebar();
+
+  if (name) {
+    addAgentBubble(`Great to meet you, ${name}! I've saved your profile. I can see you have ${Object.keys(loyaltyPrograms).length} loyalty program(s) on file.
+
+Tell me where you'd like to go — or ask me to suggest somewhere based on your travel style!`);
   }
+}
 
-  function buildItineraryCard(itin, links) {
-    const card = document.createElement("div");
-    card.className = "itinerary-card";
-    card.style.marginLeft = "44px";
-
-    const milesInfo = itin.total_miles_used > 0
-      ? `<div class="itin-row"><span class="label">Miles Used</span><span>${itin.total_miles_used.toLocaleString()}</span></div>`
-      : "";
-    const pointsInfo = itin.total_points_used > 0
-      ? `<div class="itin-row"><span class="label">Points Used</span><span>${itin.total_points_used.toLocaleString()}</span></div>`
-      : "";
-
-    card.innerHTML = `
-      <h4>🗺️ Your Itinerary — ${itin.id}</h4>
-      <div class="itin-row"><span class="label">Outbound</span><span>${escHtml(itin.outbound_flight)}</span></div>
-      ${itin.return_flight ? `<div class="itin-row"><span class="label">Return</span><span>${escHtml(itin.return_flight)}</span></div>` : ""}
-      <div class="itin-row"><span class="label">Hotel</span><span>${escHtml(itin.hotel)}</span></div>
-      <div class="itin-row"><span class="label">Cabin</span><span>${itin.cabin_class}</span></div>
-      <div class="itin-row"><span class="label">Nights</span><span>${itin.nights}</span></div>
-      ${milesInfo}${pointsInfo}
-      <div class="cost-summary">
-        <div style="color:#86efac;font-size:12px;margin-bottom:4px">Total Cash Cost</div>
-        <div class="total">$${itin.total_cash_usd.toLocaleString()}</div>
-      </div>
-      ${links ? `<button class="book-btn" onclick="openBookingLinks(${JSON.stringify(links).replace(/"/g,'&quot;')})">Book Now (opens airline & hotel pages)</button>` : ""}
-    `;
-    return card;
-  }
-
-  function openBookingLinks(links) {
-    if (links.outbound_flight) window.open(links.outbound_flight, "_blank");
-    if (links.return_flight)   window.open(links.return_flight,   "_blank");
-    if (links.hotel)           window.open(links.hotel,           "_blank");
-    alert(links.note || "Complete the booking on each page. You only need to enter payment details.");
-  }
-
-  async function sendMessage() {
-    const text = inputEl.value.trim();
-    if (!text) return;
-
-    inputEl.value = "";
-    inputEl.style.height = "auto";
-    sendBtn.disabled = true;
-    setStatus("thinking", "Thinking…");
-
-    addUserBubble(text);
-    addThinkingBubble();
-
-    try {
-      const res = await fetch(`${API}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, session_id: sessionId }),
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      sessionId = data.session_id;
-      addAgentResponse(data);
-      setStatus("done", "Done");
-    } catch (err) {
-      removeThinking();
-      const div = document.createElement("div");
-      div.className = "msg agent";
-      div.innerHTML = `<div class="avatar">⚠️</div><div class="bubble" style="color:#f87171">Error: ${escHtml(err.message)}. Is the backend running on port 8000?</div>`;
-      messagesEl.appendChild(div);
-      setStatus("", "Error");
-    } finally {
-      sendBtn.disabled = false;
-      inputEl.focus();
-    }
-  }
-
-  async function loadProfile() {
-    try {
-      const res = await fetch(`${API}/profile`);
-      if (!res.ok) return;
-      const p = await res.json();
-
-      // Loyalty programs
-      const ll = document.getElementById("loyalty-list");
-      const programs = p.loyalty_programs || {};
-      if (Object.keys(programs).length > 0) {
-        ll.innerHTML = Object.entries(programs)
-          .map(([prog, bal]) => `
-            <div class="loyalty-card">
-              <span class="program">${escHtml(prog)}</span>
-              <span class="balance">${Number(bal).toLocaleString()}</span>
-            </div>`)
-          .join("");
+function skipOnboarding() {
+  // Create an anonymous profile
+  fetch(`${API}/profiles`, {method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
+    .then(r => r.json()).then(data => {
+      if (data.profile_id) {
+        profileId = data.profile_id;
+        localStorage.setItem("travelAgentProfileId", profileId);
       }
+    }).catch(() => {});
+  document.getElementById("onboarding-overlay").classList.add("hidden");
+  loadSidebar();
+}
 
-      // Preferences
-      document.getElementById("pref-cabin").textContent  = p.cabin_preference || "—";
-      document.getElementById("pref-seat").textContent   = p.seat_preference || "—";
-      document.getElementById("pref-budget").textContent = p.budget_per_night ? `$${p.budget_per_night}/night` : "—";
-      document.getElementById("pref-pet").textContent    = p.pet_friendly_required ? "Yes" : "No";
-    } catch (_) { /* silently ignore — backend may not be running yet */ }
+function reopenOnboarding() {
+  currentStep = 0;
+  document.querySelectorAll(".ob-step").forEach((s,i) => {
+    s.classList.toggle("active", i === 0);
+  });
+  obUpdateDots();
+  document.getElementById("onboarding-overlay").classList.remove("hidden");
+  // Pre-fill from loaded profile
+  loadProfileIntoForm();
+}
+
+async function loadProfileIntoForm() {
+  if (!profileId) return;
+  const p = await fetch(`${API}/profiles/${profileId}`).then(r => r.json()).catch(() => null);
+  if (!p) return;
+  if (p.name) document.getElementById("ob-name").value = p.name;
+  if (p.email) document.getElementById("ob-email").value = p.email;
+  document.getElementById("ob-cabin").value = p.cabin_preference || "economy";
+  document.getElementById("ob-seat").value  = p.seat_preference || "window";
+  if (p.budget_per_night) document.getElementById("ob-budget").value = p.budget_per_night;
+  if (p.dietary_restrictions?.length) document.getElementById("ob-dietary").value = p.dietary_restrictions.join(", ");
+  document.getElementById("ob-pet").checked = !!p.pet_friendly_required;
+  if (p.objectives) document.getElementById("ob-objectives").value = p.objectives;
+
+  // Reload loyalty entries
+  const le = document.getElementById("loyalty-entries");
+  le.innerHTML = "";
+  const progs = p.loyalty_programs || {};
+  if (Object.keys(progs).length > 0) {
+    Object.entries(progs).forEach(([prog, bal]) => addLoyaltyRow(prog, bal));
+  } else {
+    addLoyaltyRow();
   }
 
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+  // Trip types
+  document.querySelectorAll(".tt-chip").forEach(chip => {
+    chip.classList.toggle("selected", (p.trip_types_liked || []).includes(chip.dataset.type));
+  });
+}
+
+function goToLoyaltyStep() {
+  currentStep = 1;
+  document.querySelectorAll(".ob-step").forEach((s,i) => s.classList.toggle("active", i === 1));
+  obUpdateDots();
+  loadProfileIntoForm();
+  document.getElementById("onboarding-overlay").classList.remove("hidden");
+}
+
+// ── Share modal ──────────────────────────────────────────────────────────────
+function openShareModal() {
+  const url = `${window.location.origin}${window.location.pathname}`;
+  document.getElementById("share-url-text").textContent = url;
+  document.getElementById("share-modal").classList.remove("hidden");
+}
+function closeShareModal() { document.getElementById("share-modal").classList.add("hidden"); }
+async function copyShareUrl() {
+  const text = document.getElementById("share-url-text").textContent;
+  await navigator.clipboard.writeText(text).catch(() => {});
+  document.querySelector(".copy-btn").textContent = "✓ Copied!";
+  setTimeout(() => document.querySelector(".copy-btn").textContent = "Copy Link", 2000);
+}
+
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+async function loadSidebar() {
+  if (!profileId) return;
+  try {
+    const p = await fetch(`${API}/profiles/${profileId}`).then(r => r.json());
+    renderLoyalty(p.loyalty_programs || {});
+    document.getElementById("pf-cabin").textContent  = p.cabin_preference || "—";
+    document.getElementById("pf-seat").textContent   = p.seat_preference  || "—";
+    document.getElementById("pf-budget").textContent = p.budget_per_night ? `$${p.budget_per_night}/night` : "—";
+    document.getElementById("pf-types").textContent  = (p.trip_types_liked || []).join(", ") || "—";
+    renderWatches(p.active_watches || []);
+  } catch (_) {}
+}
+
+function renderLoyalty(programs) {
+  const el = document.getElementById("loyalty-list");
+  const entries = Object.entries(programs);
+  if (!entries.length) { el.innerHTML = '<div style="font-size:12px;color:#374151">No programs yet.</div>'; return; }
+  el.innerHTML = entries.map(([prog, bal]) =>
+    `<div class="loyalty-card"><span class="prog" title="${esc(prog)}">${esc(prog)}</span><span class="bal">${Number(bal).toLocaleString()}</span></div>`
+  ).join("");
+}
+
+function renderWatches(watches) {
+  const el = document.getElementById("watches-list");
+  const active = watches.filter(w => w.status === "active");
+  if (!active.length) { el.innerHTML = '<div style="font-size:12px;color:#374151">No active watches.</div>'; return; }
+  el.innerHTML = active.map(w => `
+    <div class="watch-item">
+      <div class="wi-desc">${esc(w.description || "Unnamed watch")}</div>
+      <div class="wi-trigger">${esc(w.origin||"")} → ${esc(w.destination||"")} ${w.travel_month ? "· "+esc(w.travel_month) : ""}</div>
+      ${w.max_price_target ? `<div class="wi-trigger">Price target: $${w.max_price_target}</div>` : ""}
+      <span class="wi-status">${w.alert_sent ? "⚡ Alerted" : "👁 Watching"}</span>
+    </div>`).join("");
+}
+
+// ── Chat ─────────────────────────────────────────────────────────────────────
+const messagesEl = document.getElementById("messages");
+const inputEl    = document.getElementById("user-input");
+const sendBtn    = document.getElementById("send-btn");
+
+inputEl.addEventListener("input", () => { inputEl.style.height="auto"; inputEl.style.height=Math.min(inputEl.scrollHeight,110)+"px"; });
+inputEl.addEventListener("keydown", e => { if (e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();} });
+sendBtn.addEventListener("click", sendMessage);
+
+function scrollBot() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+function setStatus(cls, txt) {
+  const b = document.getElementById("status-badge");
+  b.className = cls; b.textContent = txt;
+}
+
+function addUserBubble(text) {
+  const d = document.createElement("div");
+  d.className = "msg user";
+  d.innerHTML = `<div class="avatar">👤</div><div class="bubble">${esc(text)}</div>`;
+  messagesEl.appendChild(d); scrollBot();
+}
+
+function addAgentBubble(text) {
+  const d = document.createElement("div");
+  d.className = "msg agent";
+  d.innerHTML = `<div class="avatar">✈️</div><div class="bubble">${esc(text)}</div>`;
+  messagesEl.appendChild(d); scrollBot();
+}
+
+function addThinking() {
+  const d = document.createElement("div");
+  d.className = "msg agent thinking-msg"; d.id = "thinking";
+  d.innerHTML = `<div class="avatar">✈️</div><div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  messagesEl.appendChild(d); scrollBot();
+}
+
+function removeThinking() { const e = document.getElementById("thinking"); if(e) e.remove(); }
+
+function addAgentResponse(data) {
+  removeThinking();
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;flex-direction:column;gap:5px";
+
+  // Main text bubble
+  const msg = document.createElement("div");
+  msg.className = "msg agent";
+  msg.innerHTML = `<div class="avatar">✈️</div><div class="bubble">${esc(data.text)}</div>`;
+  wrap.appendChild(msg);
+
+  // Reasoning panel
+  if (data.tool_calls_log?.length) wrap.appendChild(buildReasoningPanel(data.tool_calls_log, data.iterations));
+
+  // Reflection card
+  if (data.reflection) wrap.appendChild(buildReflectionCard(data.reflection));
+
+  // Warnings
+  if (data.reflection?.warnings) {
+    const wb = document.createElement("div");
+    wb.className = "warning-banner";
+    wb.innerHTML = `⚠️ <strong>Heads up:</strong> ${esc(data.reflection.warnings)}`;
+    wrap.appendChild(wb);
   }
 
-  // Load profile on start
-  loadProfile();
+  // Itinerary card
+  if (data.itinerary) wrap.appendChild(buildItineraryCard(data.itinerary, data.booking_links));
+
+  messagesEl.appendChild(wrap); scrollBot();
+  loadSidebar();
+}
+
+function buildReasoningPanel(log, iters) {
+  const panel = document.createElement("div");
+  panel.className = "reasoning-panel";
+  const header = document.createElement("div");
+  header.className = "rp-header";
+  header.innerHTML = `<span>🔍 Agent Reasoning — ${log.length} tools, ${iters} iterations</span><span id="rp-toggle">▼ show</span>`;
+  const body = document.createElement("div");
+  body.className = "rp-body";
+  header.addEventListener("click", () => {
+    body.classList.toggle("open");
+    header.querySelector("#rp-toggle").textContent = body.classList.contains("open") ? "▲ hide" : "▼ show";
+  });
+  log.forEach(entry => {
+    const s = document.createElement("div"); s.className = "tool-step";
+    s.innerHTML = `<div class="tn">→ ${esc(entry.tool)}</div><div class="td">${esc(JSON.stringify(entry.input, null, 2))}</div>`;
+    body.appendChild(s);
+  });
+  panel.appendChild(header); panel.appendChild(body);
+  return panel;
+}
+
+function buildReflectionCard(r) {
+  const card = document.createElement("div"); card.className = "reflection-card";
+  card.innerHTML = `<h4>🧠 Agent Self-Critique & Reasoning</h4>
+    ${r.flight_analysis ? `<div class="rc-section"><div class="rc-label">Flights</div><div class="rc-text">${esc(r.flight_analysis)}</div></div>` : ""}
+    ${r.hotel_analysis  ? `<div class="rc-section"><div class="rc-label">Hotels</div><div class="rc-text">${esc(r.hotel_analysis)}</div></div>` : ""}
+    ${r.redemption_strategy ? `<div class="rc-section"><div class="rc-label">Miles & Points Strategy</div><div class="rc-text">${esc(r.redemption_strategy)}</div></div>` : ""}
+    ${r.alignment_with_goals ? `<div class="rc-section"><div class="rc-label">Alignment With Your Goals</div><div class="rc-text">${esc(r.alignment_with_goals)}</div></div>` : ""}
+    ${r.final_recommendation ? `<div class="rc-section"><div class="rc-label">✅ Recommendation</div><div class="rc-text">${esc(r.final_recommendation)}</div></div>` : ""}`;
+  return card;
+}
+
+function buildItineraryCard(itin, links) {
+  const card = document.createElement("div"); card.className = "itin-card";
+  const milesRow  = itin.flight_miles_used > 0 ? `<div class="itin-row"><span class="label">Miles (${esc(itin.miles_program||"flight")})</span><span>${Number(itin.flight_miles_used).toLocaleString()}</span></div>` : "";
+  const pointsRow = itin.hotel_points_used > 0  ? `<div class="itin-row"><span class="label">Points (${esc(itin.points_program||"hotel")})</span><span>${Number(itin.hotel_points_used).toLocaleString()}</span></div>` : "";
+  const linksStr  = links ? JSON.stringify(links).replace(/"/g,"&quot;") : "null";
+  card.innerHTML = `
+    <h4>🗺️ Itinerary — ${esc(itin.id)}</h4>
+    <div class="itin-row"><span class="label">Outbound</span><span>${esc(itin.outbound_flight)}</span></div>
+    ${itin.return_flight ? `<div class="itin-row"><span class="label">Return</span><span>${esc(itin.return_flight)}</span></div>` : ""}
+    <div class="itin-row"><span class="label">Hotel</span><span>${esc(itin.hotel)}</span></div>
+    <div class="itin-row"><span class="label">Cabin</span><span>${esc(itin.cabin_class)}</span></div>
+    <div class="itin-row"><span class="label">Nights × Travelers</span><span>${itin.nights} nights × ${itin.travelers||1}</span></div>
+    ${milesRow}${pointsRow}
+    <div class="cost-box">
+      <div style="color:#86efac;font-size:11px;margin-bottom:3px">Total Cash</div>
+      <div class="total">$${Number(itin.total_cash_usd).toLocaleString()}</div>
+    </div>
+    ${links ? `<button class="book-btn" onclick="openLinks(${linksStr})">Book Now — opens airline & hotel →</button>` : ""}`;
+  return card;
+}
+
+function openLinks(links) {
+  if (links.outbound_flight) window.open(links.outbound_flight, "_blank");
+  if (links.return_flight)   window.open(links.return_flight,   "_blank");
+  if (links.hotel)           window.open(links.hotel, "_blank");
+  if (links.note) alert(links.note);
+}
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || sendBtn.disabled) return;
+  inputEl.value = ""; inputEl.style.height = "auto";
+  sendBtn.disabled = true;
+  setStatus("thinking", "Thinking…");
+  addUserBubble(text);
+  addThinking();
+
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({message: text, profile_id: profileId}),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.profile_id && !profileId) {
+      profileId = data.profile_id;
+      localStorage.setItem("travelAgentProfileId", profileId);
+    }
+    addAgentResponse(data);
+    setStatus("done", "Done");
+  } catch (err) {
+    removeThinking();
+    const d = document.createElement("div"); d.className = "msg agent";
+    d.innerHTML = `<div class="avatar">⚠️</div><div class="bubble" style="color:#f87171">Error: ${esc(err.message)}. Is the backend running on port 8000?</div>`;
+    messagesEl.appendChild(d); scrollBot();
+    setStatus("", "Error");
+  } finally {
+    sendBtn.disabled = false; inputEl.focus();
+  }
+}
+
+function quickSend(text) { inputEl.value = text; sendMessage(); }
+
+function esc(str) {
+  return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
 </script>
 </body>
 </html>

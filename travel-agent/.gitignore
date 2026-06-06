@@ -4,3 +4,5 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+data/profiles/*.json
+data/default_profile_id.txt

@@ -1,45 +1,64 @@
 """
-FastAPI REST server for the travel agent.
+FastAPI server for the AI Travel Agent.
+
+Multi-user: each client carries a profile_id in requests.
+New visitors get a fresh profile via POST /profiles.
+Profiles are stored in data/profiles/<uuid>.json.
 
 Endpoints:
-  POST /chat            — send a message, get agent response
-  GET  /profile         — view current user profile
-  PUT  /profile         — update user profile directly
-  GET  /health          — liveness check
-
-Session state (conversation history) is kept in-memory per session_id.
-In production, replace with Redis or a DB-backed store.
+  POST /profiles                     — create new profile, returns profile_id
+  GET  /profiles/{profile_id}        — get profile
+  PUT  /profiles/{profile_id}        — update profile
+  GET  /profiles/{profile_id}/watches — list deal watches
+  POST /chat                         — run agent turn
+  GET  /health                       — liveness
+  POST /monitor/check-now            — force deal check (demo/testing)
+  GET  /loyalty-programs             — list all 23 programs
 """
 
+import logging
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from agent import TravelAgent
-from pathlib import Path
+import tools as tool_module
+from loyalty import ALL_PROGRAM_NAMES, PROGRAMS
+from memory import TravelMemory
+from monitor import start_monitor, stop_monitor, trigger_check_now
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# ── Per-profile session stores ───────────────────────────────────────────────
+# sessions[profile_id] → list of message dicts
+sessions: dict[str, list] = {}
+_agents: dict[str, object] = {}   # lazy-loaded TravelAgent per profile
 
 
-# ──────────────────────────────────────────────
-# App setup
-# ──────────────────────────────────────────────
+def get_agent(profile_id: str):
+    """Lazy-load a TravelAgent for the given profile."""
+    if profile_id not in _agents:
+        from agent import TravelAgent
+        _agents[profile_id] = TravelAgent(profile_id=profile_id)
+    return _agents[profile_id]
 
-agent: TravelAgent | None = None
-sessions: dict[str, list] = {}  # session_id → conversation history
 
+# ── App lifespan ─────────────────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global agent
-    agent = TravelAgent()
+    start_monitor()
     yield
+    stop_monitor()
 
 
-app = FastAPI(title="Travel Agent API", lifespan=lifespan)
+app = FastAPI(title="AI Travel Agent", version="2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,23 +67,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve frontend files at /app/*
 frontend_dir = Path(__file__).parent.parent / "frontend"
 if frontend_dir.exists():
     app.mount("/app", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
 
-# ──────────────────────────────────────────────
-# Request / Response models
-# ──────────────────────────────────────────────
+# ── Request / Response models ─────────────────────────────────────────────────
+
+class NewProfileRequest(BaseModel):
+    name: str = ""
+    email: str = ""
+
+class ProfileUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    loyalty_programs: dict | None = None
+    preferred_airlines: list[str] | None = None
+    preferred_hotels: list[str] | None = None
+    cabin_preference: str | None = None
+    seat_preference: str | None = None
+    budget_per_night: float | None = None
+    total_trip_budget: float | None = None
+    dietary_restrictions: list[str] | None = None
+    accessibility_needs: list[str] | None = None
+    pet_friendly_required: bool | None = None
+    trip_types_liked: list[str] | None = None
+    trip_types_disliked: list[str] | None = None
+    objectives: str | None = None
 
 class ChatRequest(BaseModel):
     message: str
-    session_id: str | None = None  # None → create new session
-
+    profile_id: str | None = None   # None → use default single-user profile
 
 class ChatResponse(BaseModel):
-    session_id: str
+    profile_id: str
     text: str
     tool_calls_log: list[dict]
     reflection: dict | None
@@ -73,55 +109,66 @@ class ChatResponse(BaseModel):
     iterations: int
 
 
-class ProfileUpdateRequest(BaseModel):
-    name: str | None = None
-    loyalty_programs: dict | None = None
-    preferred_airlines: list[str] | None = None
-    preferred_hotels: list[str] | None = None
-    cabin_preference: str | None = None
-    seat_preference: str | None = None
-    budget_per_night: float | None = None
-    dietary_restrictions: list[str] | None = None
-    pet_friendly_required: bool | None = None
+# ── Profile endpoints ─────────────────────────────────────────────────────────
+
+@app.post("/profiles", status_code=201)
+def create_profile(req: NewProfileRequest = NewProfileRequest()):
+    mem = TravelMemory.create_profile()
+    if req.name or req.email:
+        mem.update({"name": req.name, "email": req.email})
+    return {"profile_id": mem.profile_id, "profile": mem.get_profile()}
 
 
-# ──────────────────────────────────────────────
-# Endpoints
-# ──────────────────────────────────────────────
+@app.get("/profiles/{profile_id}")
+def get_profile(profile_id: str):
+    mem = TravelMemory.load_profile(profile_id)
+    if not mem:
+        raise HTTPException(404, f"Profile {profile_id} not found")
+    return mem.get_profile()
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "model": "claude-sonnet-4-6"}
+
+@app.put("/profiles/{profile_id}")
+def update_profile(profile_id: str, req: ProfileUpdate):
+    mem = TravelMemory.load_profile(profile_id)
+    if not mem:
+        raise HTTPException(404, f"Profile {profile_id} not found")
+    mem.update(req.model_dump(exclude_none=True))
+    # Invalidate cached agent so it picks up new memory
+    _agents.pop(profile_id, None)
+    return {"status": "saved", "profile": mem.get_profile()}
 
 
-@app.get("/")
-def root():
-    index = frontend_dir / "index.html"
-    if index.exists():
-        return FileResponse(str(index))
-    return {"message": "Travel Agent API — open /app for the UI or POST /chat to start."}
+@app.get("/profiles/{profile_id}/watches")
+def get_watches(profile_id: str):
+    mem = TravelMemory.load_profile(profile_id)
+    if not mem:
+        raise HTTPException(404, f"Profile {profile_id} not found")
+    return {"watches": mem.profile.get("active_watches", [])}
 
+
+# ── Chat endpoint ─────────────────────────────────────────────────────────────
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    if not agent:
-        raise HTTPException(503, "Agent not initialised")
+    profile_id = req.profile_id or _get_default_profile_id()
+    mem = TravelMemory.load_profile(profile_id)
+    if not mem:
+        # Auto-create profile on first use
+        mem = TravelMemory.create_profile()
+        profile_id = mem.profile_id
 
-    # Create or retrieve session
-    session_id = req.session_id or str(uuid.uuid4())
-    history = sessions.get(session_id, [])
+    agent = get_agent(profile_id)
+    history = sessions.get(profile_id, [])
 
     result = agent.chat(req.message, history)
 
-    # Persist conversation: append user + final assistant turn
-    history = history + [
+    sessions[profile_id] = history + [
         {"role": "user", "content": req.message},
         {"role": "assistant", "content": result.text},
     ]
-    sessions[session_id] = history
 
     return ChatResponse(
-        session_id=session_id,
+        profile_id=profile_id,
         text=result.text,
         tool_calls_log=result.tool_calls_log,
         reflection=result.reflection,
@@ -131,17 +178,44 @@ def chat(req: ChatRequest):
     )
 
 
-@app.get("/profile")
-def get_profile():
-    if not agent:
-        raise HTTPException(503, "Agent not initialised")
-    return agent.memory.get_profile()
+# ── Utility endpoints ─────────────────────────────────────────────────────────
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "model": "claude-sonnet-4-6", "monitor": "running"}
 
 
-@app.put("/profile")
-def update_profile(req: ProfileUpdateRequest):
-    if not agent:
-        raise HTTPException(503, "Agent not initialised")
-    updates = req.model_dump(exclude_none=True)
-    agent.memory.update(updates)
-    return {"status": "saved", "profile": agent.memory.get_profile()}
+@app.get("/loyalty-programs")
+def list_loyalty_programs():
+    return {
+        "programs": [
+            {"name": k, "type": v["type"], "currency": v["currency"], "typical_cpp": v["typical_cpp"]}
+            for k, v in PROGRAMS.items()
+        ]
+    }
+
+
+@app.post("/monitor/check-now")
+def force_check():
+    result = trigger_check_now()
+    return result
+
+
+@app.get("/")
+def root():
+    index = frontend_dir / "index.html"
+    if index.exists():
+        return FileResponse(str(index))
+    return {"message": "AI Travel Agent API v2 — POST /profiles to start, or open /app for the UI."}
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _get_default_profile_id() -> str:
+    from memory import DATA_DIR
+    default_file = DATA_DIR / "default_profile_id.txt"
+    if default_file.exists():
+        return default_file.read_text().strip()
+    mem = TravelMemory.create_profile()
+    default_file.write_text(mem.profile_id)
+    return mem.profile_id
