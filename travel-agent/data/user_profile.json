@@ -1,0 +1,12 @@
+{
+  "name": "",
+  "loyalty_programs": {},
+  "preferred_airlines": [],
+  "preferred_hotels": [],
+  "cabin_preference": "economy",
+  "seat_preference": "window",
+  "budget_per_night": null,
+  "dietary_restrictions": [],
+  "pet_friendly_required": false,
+  "past_trips": []
+}
